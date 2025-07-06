@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -5,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, Bell, Calendar, Home, Coins } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Navbar } from "@/components/Navbar";
 
 // Mock warranty data
 const mockWarranties = [
@@ -57,7 +59,7 @@ const Dashboard = () => {
     // Initialize coins for new users
     const coins = localStorage.getItem("userCoins");
     if (!coins) {
-      localStorage.setItem("userCoins", "5"); // Give 5 free coins to new users
+      localStorage.setItem("userCoins", "5");
       setUserCoins(5);
     } else {
       setUserCoins(parseInt(coins));
@@ -67,33 +69,30 @@ const Dashboard = () => {
     setHasUsedFreeUpload(!!freeUploadUsed);
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("userEmail");
-    toast("Logged out successfully");
-    navigate("/");
-  };
-
   const handleFileUpload = (file: File) => {
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
     if (!hasUsedFreeUpload) {
-      // First upload is free
-      toast("Processing your free upload...");
+      toast.success("Processing your free upload...");
       setTimeout(() => {
         localStorage.setItem("hasUsedFreeUpload", "true");
         setHasUsedFreeUpload(true);
-        toast("Bill processed successfully! Your first upload was free.");
+        toast.success("Bill processed successfully! Your first upload was free.");
       }, 2000);
     } else if (userCoins > 0) {
-      // Use a coin for the upload
-      toast("Processing your upload...");
+      toast.success("Processing your upload...");
       setTimeout(() => {
         const newCoins = userCoins - 1;
         localStorage.setItem("userCoins", newCoins.toString());
         setUserCoins(newCoins);
-        toast(`Bill processed successfully! You have ${newCoins} coins remaining.`);
+        toast.success(`Bill processed successfully! You have ${newCoins} coins remaining.`);
       }, 2000);
     } else {
-      toast("You need coins to upload more bills. Please upgrade your plan!");
+      toast.error("You need coins to upload more bills. Please upgrade your plan!");
     }
   };
 
@@ -137,167 +136,159 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link to="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-green-500 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">W</span>
+      <Navbar />
+      
+      <div className="pt-16">
+        {/* Header */}
+        <header className="bg-white/80 backdrop-blur-md border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+                <p className="text-sm text-gray-600">Welcome back, {userEmail}</p>
               </div>
-              <span className="text-xl font-bold text-gray-900">WarrantySafe</span>
-            </Link>
-            
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-green-100 px-3 py-2 rounded-lg">
-                <Coins className="w-5 h-5 text-blue-600" />
-                <span className="font-semibold text-blue-900">{userCoins} coins</span>
-              </div>
-              <span className="text-gray-600">Welcome, {userEmail}</span>
-              <Link to="/upgrade">
-                <Button variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
-                  Get More Coins
-                </Button>
-              </Link>
-              <Button onClick={handleLogout} variant="ghost" className="text-gray-600">
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Dashboard Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Your Warranties</h1>
-          <p className="text-gray-600">Manage and track all your product warranties in one place</p>
-        </div>
-
-        {/* Upload Section */}
-        <Card className="p-6 mb-8 bg-gradient-to-r from-blue-50 to-green-50 border-2 border-dashed border-blue-300">
-          <div className="text-center">
-            <Upload className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {!hasUsedFreeUpload ? "Upload Your First Bill Free!" : `Upload a New Receipt (1 coin)`}
-            </h3>
-            <p className="text-gray-600 mb-4">
-              {!hasUsedFreeUpload 
-                ? "Your first upload is completely free!" 
-                : userCoins > 0 
-                  ? "Each additional upload costs 1 coin"
-                  : "You need coins to upload more bills"
-              }
-            </p>
-            {(userCoins > 0 || !hasUsedFreeUpload) ? (
-              <>
-                <input
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label htmlFor="file-upload">
-                  <Button 
-                    as="span"
-                    className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white cursor-pointer"
-                  >
-                    Choose File
+              
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-green-100 px-3 py-2 rounded-lg">
+                  <Coins className="w-5 h-5 text-blue-600" />
+                  <span className="font-semibold text-blue-900">{userCoins} coins</span>
+                </div>
+                <Link to="/upgrade">
+                  <Button variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
+                    Get More Coins
                   </Button>
-                </label>
-              </>
-            ) : (
-              <Link to="/upgrade">
-                <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
-                  Get More Coins
-                </Button>
-              </Link>
-            )}
-          </div>
-        </Card>
-
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 mb-6">
-          <Button 
-            onClick={() => setFilter("all")}
-            variant={filter === "all" ? "default" : "outline"}
-            className={filter === "all" ? "bg-gradient-to-r from-blue-500 to-green-500 text-white" : ""}
-          >
-            All Warranties
-          </Button>
-          <Button 
-            onClick={() => setFilter("active")}
-            variant={filter === "active" ? "default" : "outline"}
-            className={filter === "active" ? "bg-green-500 text-white" : ""}
-          >
-            Active
-          </Button>
-          <Button 
-            onClick={() => setFilter("expiring")}
-            variant={filter === "expiring" ? "default" : "outline"}
-            className={filter === "expiring" ? "bg-orange-500 text-white" : ""}
-          >
-            Expiring Soon
-          </Button>
-          <Button 
-            onClick={() => setFilter("expired")}
-            variant={filter === "expired" ? "default" : "outline"}
-            className={filter === "expired" ? "bg-red-500 text-white" : ""}
-          >
-            Expired
-          </Button>
-        </div>
-
-        {/* Warranties Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredWarranties.map((warranty) => (
-            <Card key={warranty.id} className="p-6 hover:shadow-lg transition-all duration-300">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                    {warranty.productName}
-                  </h3>
-                  <p className="text-gray-600">{warranty.brand}</p>
-                </div>
-                {getStatusBadge(warranty)}
+                </Link>
               </div>
-              
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Purchased: {new Date(warranty.purchaseDate).toLocaleDateString()}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Bell className="w-4 h-4 mr-2" />
-                  Expires: {new Date(warranty.warrantyEnd).toLocaleDateString()}
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Home className="w-4 h-4 mr-2" />
-                  {Math.max(0, getDaysRemaining(warranty.warrantyEnd))} days remaining
-                </div>
-              </div>
-              
-              <Button 
-                className="w-full" 
-                variant="outline"
-                onClick={() => window.open(warranty.supportUrl, "_blank")}
-              >
-                Visit Support Page
-              </Button>
-            </Card>
-          ))}
-        </div>
-
-        {filteredWarranties.length === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Calendar className="w-8 h-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No warranties found</h3>
-            <p className="text-gray-600">Upload your first receipt to get started</p>
           </div>
-        )}
+        </header>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Upload Section */}
+          <Card className="p-6 mb-8 bg-gradient-to-r from-blue-50 to-green-50 border-2 border-dashed border-blue-300">
+            <div className="text-center">
+              <Upload className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {!hasUsedFreeUpload ? "Upload Your First Bill Free!" : `Upload a New Receipt (1 coin)`}
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {!hasUsedFreeUpload 
+                  ? "Your first upload is completely free!" 
+                  : userCoins > 0 
+                    ? "Each additional upload costs 1 coin (Max 5MB)"
+                    : "You need coins to upload more bills"
+                }
+              </p>
+              {(userCoins > 0 || !hasUsedFreeUpload) ? (
+                <>
+                  <input
+                    type="file"
+                    accept="*/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label htmlFor="file-upload">
+                    <Button 
+                      className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white cursor-pointer"
+                      type="button"
+                    >
+                      Choose File
+                    </Button>
+                  </label>
+                </>
+              ) : (
+                <Link to="/upgrade">
+                  <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
+                    Get More Coins
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </Card>
+
+          {/* Filters */}
+          <div className="flex flex-wrap gap-4 mb-6">
+            <Button 
+              onClick={() => setFilter("all")}
+              variant={filter === "all" ? "default" : "outline"}
+              className={filter === "all" ? "bg-gradient-to-r from-blue-500 to-green-500 text-white" : ""}
+            >
+              All Warranties
+            </Button>
+            <Button 
+              onClick={() => setFilter("active")}
+              variant={filter === "active" ? "default" : "outline"}
+              className={filter === "active" ? "bg-green-500 text-white" : ""}
+            >
+              Active
+            </Button>
+            <Button 
+              onClick={() => setFilter("expiring")}
+              variant={filter === "expiring" ? "default" : "outline"}
+              className={filter === "expiring" ? "bg-orange-500 text-white" : ""}
+            >
+              Expiring Soon
+            </Button>
+            <Button 
+              onClick={() => setFilter("expired")}
+              variant={filter === "expired" ? "default" : "outline"}
+              className={filter === "expired" ? "bg-red-500 text-white" : ""}
+            >
+              Expired
+            </Button>
+          </div>
+
+          {/* Warranties Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredWarranties.map((warranty) => (
+              <Card key={warranty.id} className="p-6 hover:shadow-lg transition-all duration-300">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      {warranty.productName}
+                    </h3>
+                    <p className="text-gray-600">{warranty.brand}</p>
+                  </div>
+                  {getStatusBadge(warranty)}
+                </div>
+                
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Purchased: {new Date(warranty.purchaseDate).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Bell className="w-4 h-4 mr-2" />
+                    Expires: {new Date(warranty.warrantyEnd).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Home className="w-4 h-4 mr-2" />
+                    {Math.max(0, getDaysRemaining(warranty.warrantyEnd))} days remaining
+                  </div>
+                </div>
+                
+                <Button 
+                  className="w-full" 
+                  variant="outline"
+                  onClick={() => window.open(warranty.supportUrl, "_blank")}
+                >
+                  Visit Support Page
+                </Button>
+              </Card>
+            ))}
+          </div>
+
+          {filteredWarranties.length === 0 && (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Calendar className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">No warranties found</h3>
+              <p className="text-gray-600">Upload your first receipt to get started</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
