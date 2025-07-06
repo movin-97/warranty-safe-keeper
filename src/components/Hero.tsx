@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, Eye, EyeOff } from "lucide-react";
+import { Upload, Eye, EyeOff, X, FileText, Image as ImageIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -22,25 +22,77 @@ export const Hero = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [warrantyDetails, setWarrantyDetails] = useState<WarrantyDetails | null>(null);
   const [showAllDetails, setShowAllDetails] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const isAuthenticated = localStorage.getItem("isAuthenticated");
   const isPaidUser = localStorage.getItem("userPlan") === "premium";
 
-  // Mock AI analysis function - in real app, this would call an AI service
+  // Simple text extraction for demo purposes
+  const extractTextFromFile = async (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // For demo purposes, we'll return some mock extracted text
+        // In a real app, you'd use OCR or PDF parsing here
+        resolve(`Receipt from ${file.name} - Sample extracted text for warranty analysis`);
+      };
+      reader.readAsText(file);
+    });
+  };
+
+  // Mock AI analysis function that uses actual file data
   const analyzeFile = async (file: File): Promise<WarrantyDetails> => {
     // Simulate AI processing delay
     await new Promise(resolve => setTimeout(resolve, 3000));
     
-    // Mock extracted data - in real app, this would come from AI analysis
+    // Extract some basic info from the actual file
+    const extractedText = await extractTextFromFile(file);
+    console.log("Analyzing file:", file.name, "Size:", file.size, "Type:", file.type);
+    
+    // Mock analysis based on file name and type for demo
+    const fileName = file.name.toLowerCase();
+    let productName = "Unknown Product";
+    let brand = "Unknown Brand";
+    
+    // Simple pattern matching for demo
+    if (fileName.includes('apple') || fileName.includes('iphone') || fileName.includes('macbook')) {
+      productName = "MacBook Pro 16-inch";
+      brand = "Apple";
+    } else if (fileName.includes('samsung')) {
+      productName = "Samsung Galaxy S24";
+      brand = "Samsung";
+    } else if (fileName.includes('laptop')) {
+      productName = "Gaming Laptop";
+      brand = "Dell";
+    } else {
+      // Use file name as product name for demo
+      productName = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+      brand = "Generic Brand";
+    }
+    
+    const today = new Date();
+    const warrantyEnd = new Date(today);
+    warrantyEnd.setFullYear(today.getFullYear() + 1);
+    
     return {
-      productName: "MacBook Pro 16-inch",
-      brand: "Apple",
-      purchaseDate: "2024-01-15",
-      warrantyEnd: "2025-01-15",
-      price: "$2,499.00",
+      productName,
+      brand,
+      purchaseDate: today.toISOString().split('T')[0],
+      warrantyEnd: warrantyEnd.toISOString().split('T')[0],
+      price: "$" + Math.floor(Math.random() * 2000 + 500) + ".00",
       category: "Electronics",
-      supportUrl: "https://support.apple.com",
+      supportUrl: `https://support.${brand.toLowerCase().replace(' ', '')}.com`,
       warrantyPeriod: "1 Year Limited Warranty"
     };
+  };
+
+  const createImagePreview = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      const imageUrl = URL.createObjectURL(file);
+      setUploadedImageUrl(imageUrl);
+    } else {
+      setUploadedImageUrl(null);
+    }
   };
 
   const handleFileUpload = async (file: File) => {
@@ -50,6 +102,8 @@ export const Hero = () => {
       return;
     }
 
+    setUploadedFile(file);
+    createImagePreview(file);
     setIsAnalyzing(true);
     
     try {
@@ -77,6 +131,19 @@ export const Hero = () => {
     if (files && files[0]) {
       handleFileUpload(files[0]);
     }
+    // Reset the input value so the same file can be selected again
+    e.target.value = '';
+  };
+
+  const removeFile = () => {
+    setUploadedFile(null);
+    setUploadedImageUrl(null);
+    setWarrantyDetails(null);
+    setShowAllDetails(false);
+    if (uploadedImageUrl) {
+      URL.revokeObjectURL(uploadedImageUrl);
+    }
+    toast.success("File removed successfully");
   };
 
   const toggleDetailsView = () => {
@@ -131,44 +198,92 @@ export const Hero = () => {
           onDragLeave={() => setDragOver(false)}
         >
           <div className="text-center">
-            <Upload className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">
-              {isAnalyzing ? "Analyzing Your Bill..." : "Upload Your Bill & See Demo!"}
-            </h3>
-            <p className="text-gray-600 mb-6">
-              {isAnalyzing 
-                ? "Our AI is extracting warranty details..." 
-                : "Drag and drop your receipt or click to browse (Max 5MB)"
-              }
-            </p>
-            
-            {!isAnalyzing && (
+            {!uploadedFile ? (
               <>
-                <input
-                  type="file"
-                  accept="*/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label htmlFor="file-upload">
-                  <Button 
-                    className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white cursor-pointer"
-                    type="button"
-                  >
-                    Choose File
-                  </Button>
-                </label>
+                <Upload className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  {isAnalyzing ? "Analyzing Your Bill..." : "Upload Your Bill & See Demo!"}
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  {isAnalyzing 
+                    ? "Our AI is extracting warranty details..." 
+                    : "Drag and drop your receipt or click to browse (Max 5MB)"
+                  }
+                </p>
+                
+                {!isAnalyzing && (
+                  <>
+                    <input
+                      type="file"
+                      accept="*/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="file-upload"
+                    />
+                    <label htmlFor="file-upload">
+                      <Button 
+                        className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white cursor-pointer"
+                        type="button"
+                        asChild
+                      >
+                        <span>Choose File</span>
+                      </Button>
+                    </label>
+                  </>
+                )}
+                
+                {isAnalyzing && (
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+                )}
+                
+                <p className="text-sm text-gray-500 mt-4">
+                  Supports all file types • Max size: 5MB
+                </p>
               </>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    {uploadedImageUrl ? (
+                      <img 
+                        src={uploadedImageUrl} 
+                        alt="Uploaded file" 
+                        className="w-16 h-16 object-cover rounded border"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 bg-blue-100 rounded flex items-center justify-center">
+                        {uploadedFile.type.startsWith('image/') ? (
+                          <ImageIcon className="w-8 h-8 text-blue-600" />
+                        ) : (
+                          <FileText className="w-8 h-8 text-blue-600" />
+                        )}
+                      </div>
+                    )}
+                    <div className="text-left">
+                      <p className="font-semibold text-gray-900">{uploadedFile.name}</p>
+                      <p className="text-sm text-gray-600">
+                        {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={removeFile}
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                
+                {isAnalyzing && (
+                  <div className="flex items-center justify-center space-x-2">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                    <span className="text-blue-600">Analyzing file...</span>
+                  </div>
+                )}
+              </div>
             )}
-            
-            {isAnalyzing && (
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-            )}
-            
-            <p className="text-sm text-gray-500 mt-4">
-              Supports all file types • Max size: 5MB
-            </p>
           </div>
         </Card>
 
