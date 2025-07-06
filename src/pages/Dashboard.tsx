@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Upload, Bell, Calendar, Home } from "lucide-react";
+import { Upload, Bell, Calendar, Home, Coins } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -45,6 +43,8 @@ const mockWarranties = [
 const Dashboard = () => {
   const [warranties, setWarranties] = useState(mockWarranties);
   const [filter, setFilter] = useState("all");
+  const [userCoins, setUserCoins] = useState(0);
+  const [hasUsedFreeUpload, setHasUsedFreeUpload] = useState(false);
   const navigate = useNavigate();
   const userEmail = localStorage.getItem("userEmail");
 
@@ -53,6 +53,18 @@ const Dashboard = () => {
     if (!isAuthenticated) {
       navigate("/login");
     }
+    
+    // Initialize coins for new users
+    const coins = localStorage.getItem("userCoins");
+    if (!coins) {
+      localStorage.setItem("userCoins", "5"); // Give 5 free coins to new users
+      setUserCoins(5);
+    } else {
+      setUserCoins(parseInt(coins));
+    }
+    
+    const freeUploadUsed = localStorage.getItem("hasUsedFreeUpload");
+    setHasUsedFreeUpload(!!freeUploadUsed);
   }, [navigate]);
 
   const handleLogout = () => {
@@ -60,6 +72,36 @@ const Dashboard = () => {
     localStorage.removeItem("userEmail");
     toast("Logged out successfully");
     navigate("/");
+  };
+
+  const handleFileUpload = (file: File) => {
+    if (!hasUsedFreeUpload) {
+      // First upload is free
+      toast("Processing your free upload...");
+      setTimeout(() => {
+        localStorage.setItem("hasUsedFreeUpload", "true");
+        setHasUsedFreeUpload(true);
+        toast("Bill processed successfully! Your first upload was free.");
+      }, 2000);
+    } else if (userCoins > 0) {
+      // Use a coin for the upload
+      toast("Processing your upload...");
+      setTimeout(() => {
+        const newCoins = userCoins - 1;
+        localStorage.setItem("userCoins", newCoins.toString());
+        setUserCoins(newCoins);
+        toast(`Bill processed successfully! You have ${newCoins} coins remaining.`);
+      }, 2000);
+    } else {
+      toast("You need coins to upload more bills. Please upgrade your plan!");
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      handleFileUpload(files[0]);
+    }
   };
 
   const getDaysRemaining = (endDate: string) => {
@@ -107,10 +149,14 @@ const Dashboard = () => {
             </Link>
             
             <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-green-100 px-3 py-2 rounded-lg">
+                <Coins className="w-5 h-5 text-blue-600" />
+                <span className="font-semibold text-blue-900">{userCoins} coins</span>
+              </div>
               <span className="text-gray-600">Welcome, {userEmail}</span>
               <Link to="/upgrade">
                 <Button variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
-                  Upgrade
+                  Get More Coins
                 </Button>
               </Link>
               <Button onClick={handleLogout} variant="ghost" className="text-gray-600">
@@ -132,11 +178,42 @@ const Dashboard = () => {
         <Card className="p-6 mb-8 bg-gradient-to-r from-blue-50 to-green-50 border-2 border-dashed border-blue-300">
           <div className="text-center">
             <Upload className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload a New Receipt</h3>
-            <p className="text-gray-600 mb-4">Drag and drop or click to upload your receipt</p>
-            <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
-              Choose File
-            </Button>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {!hasUsedFreeUpload ? "Upload Your First Bill Free!" : `Upload a New Receipt (1 coin)`}
+            </h3>
+            <p className="text-gray-600 mb-4">
+              {!hasUsedFreeUpload 
+                ? "Your first upload is completely free!" 
+                : userCoins > 0 
+                  ? "Each additional upload costs 1 coin"
+                  : "You need coins to upload more bills"
+              }
+            </p>
+            {(userCoins > 0 || !hasUsedFreeUpload) ? (
+              <>
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label htmlFor="file-upload">
+                  <Button 
+                    as="span"
+                    className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white cursor-pointer"
+                  >
+                    Choose File
+                  </Button>
+                </label>
+              </>
+            ) : (
+              <Link to="/upgrade">
+                <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
+                  Get More Coins
+                </Button>
+              </Link>
+            )}
           </div>
         </Card>
 

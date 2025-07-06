@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,13 +35,15 @@ const Signup = () => {
     if (Object.values(formData).every(field => field.trim())) {
       localStorage.setItem("isAuthenticated", "true");
       localStorage.setItem("userEmail", formData.email);
-      toast("Account created successfully! Welcome to WarrantySafe.");
+      localStorage.setItem("userCoins", "5"); // Give 5 free coins to new users
+      toast("Account created successfully! You've received 5 free coins to get started.");
       navigate("/dashboard");
     } else {
       toast("Please fill in all fields");
     }
   };
 
+  
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
