@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Bell, Calendar, Home, Coins } from "lucide-react";
+import { Upload, Bell, Calendar, Home, X, FileText, Image as ImageIcon } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Navbar } from "@/components/Navbar";
@@ -47,6 +46,8 @@ const Dashboard = () => {
   const [filter, setFilter] = useState("all");
   const [userCoins, setUserCoins] = useState(0);
   const [hasUsedFreeUpload, setHasUsedFreeUpload] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const userEmail = localStorage.getItem("userEmail");
 
@@ -69,12 +70,24 @@ const Dashboard = () => {
     setHasUsedFreeUpload(!!freeUploadUsed);
   }, [navigate]);
 
+  const createImagePreview = (file: File) => {
+    if (file.type.startsWith('image/')) {
+      const imageUrl = URL.createObjectURL(file);
+      setUploadedImageUrl(imageUrl);
+    } else {
+      setUploadedImageUrl(null);
+    }
+  };
+
   const handleFileUpload = (file: File) => {
     // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       toast.error("File size must be less than 5MB");
       return;
     }
+
+    setUploadedFile(file);
+    createImagePreview(file);
 
     if (!hasUsedFreeUpload) {
       toast.success("Processing your free upload...");
@@ -101,6 +114,15 @@ const Dashboard = () => {
     if (files && files[0]) {
       handleFileUpload(files[0]);
     }
+  };
+
+  const removeFile = () => {
+    setUploadedFile(null);
+    setUploadedImageUrl(null);
+    if (uploadedImageUrl) {
+      URL.revokeObjectURL(uploadedImageUrl);
+    }
+    toast.success("File removed successfully");
   };
 
   const getDaysRemaining = (endDate: string) => {
@@ -139,7 +161,7 @@ const Dashboard = () => {
       <Navbar />
       
       <div className="pt-16">
-        {/* Header */}
+        {/* Updated Header - Removed Coins Display */}
         <header className="bg-white/80 backdrop-blur-md border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
@@ -147,62 +169,91 @@ const Dashboard = () => {
                 <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
                 <p className="text-sm text-gray-600">Welcome back, {userEmail}</p>
               </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 bg-gradient-to-r from-blue-100 to-green-100 px-3 py-2 rounded-lg">
-                  <Coins className="w-5 h-5 text-blue-600" />
-                  <span className="font-semibold text-blue-900">{userCoins} coins</span>
-                </div>
-                <Link to="/upgrade">
-                  <Button variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
-                    Get More Coins
-                  </Button>
-                </Link>
-              </div>
             </div>
           </div>
         </header>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Upload Section */}
+          {/* Enhanced Upload Section */}
           <Card className="p-6 mb-8 bg-gradient-to-r from-blue-50 to-green-50 border-2 border-dashed border-blue-300">
             <div className="text-center">
-              <Upload className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {!hasUsedFreeUpload ? "Upload Your First Bill Free!" : `Upload a New Receipt (1 coin)`}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {!hasUsedFreeUpload 
-                  ? "Your first upload is completely free!" 
-                  : userCoins > 0 
-                    ? "Each additional upload costs 1 coin (Max 5MB)"
-                    : "You need coins to upload more bills"
-                }
-              </p>
-              {(userCoins > 0 || !hasUsedFreeUpload) ? (
+              {!uploadedFile ? (
                 <>
-                  <input
-                    type="file"
-                    accept="*/*"
-                    onChange={handleFileSelect}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label htmlFor="file-upload">
-                    <Button 
-                      className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white cursor-pointer"
-                      type="button"
-                    >
-                      Choose File
-                    </Button>
-                  </label>
+                  <Upload className="w-12 h-12 text-blue-500 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    {!hasUsedFreeUpload ? "Upload Your First Bill Free!" : `Upload a New Receipt (1 coin)`}
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    {!hasUsedFreeUpload 
+                      ? "Your first upload is completely free!" 
+                      : userCoins > 0 
+                        ? "Each additional upload costs 1 coin (Max 5MB)"
+                        : "You need coins to upload more bills"
+                    }
+                  </p>
+                  {(userCoins > 0 || !hasUsedFreeUpload) ? (
+                    <>
+                      <input
+                        type="file"
+                        accept="*/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      <label htmlFor="file-upload">
+                        <Button 
+                          className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white cursor-pointer"
+                          type="button"
+                          asChild
+                        >
+                          <span>Choose File</span>
+                        </Button>
+                      </label>
+                    </>
+                  ) : (
+                    <Link to="/upgrade">
+                      <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
+                        Get More Coins
+                      </Button>
+                    </Link>
+                  )}
                 </>
               ) : (
-                <Link to="/upgrade">
-                  <Button className="bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
-                    Get More Coins
-                  </Button>
-                </Link>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      {uploadedImageUrl ? (
+                        <img 
+                          src={uploadedImageUrl} 
+                          alt="Uploaded file" 
+                          className="w-16 h-16 object-cover rounded border"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-blue-100 rounded flex items-center justify-center">
+                          {uploadedFile.type.startsWith('image/') ? (
+                            <ImageIcon className="w-8 h-8 text-blue-600" />
+                          ) : (
+                            <FileText className="w-8 h-8 text-blue-600" />
+                          )}
+                        </div>
+                      )}
+                      <div className="text-left">
+                        <p className="font-semibold text-gray-900">{uploadedFile.name}</p>
+                        <p className="text-sm text-gray-600">
+                          {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={removeFile}
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           </Card>
