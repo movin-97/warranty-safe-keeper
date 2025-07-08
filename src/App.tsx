@@ -8,7 +8,7 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import ForgotPassword from "./pages/ForgotPassword";
-import Upgrade from "./pages/Upgrade";
+import { Upgrade } from "./pages/Upgrade";
 import ImageCompressor from "./pages/ImageCompressor";
 import PDFCompressor from "./pages/PDFCompressor";
 import URLShortener from "./pages/URLShortener";

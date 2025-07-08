@@ -4,8 +4,8 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Upload, Bell, Calendar, Home, X, FileText, Image as ImageIcon, Save, Settings, Phone, Mail, MessageSquare, Download, ExternalLink, Copy } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Upload, Bell, Calendar, Home, X, FileText, Image as ImageIcon, Save, Settings, Phone, Mail, MessageSquare, Download, ExternalLink, Copy, Link } from "lucide-react";
+import { Link as RouterLink, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Navbar } from "@/components/Navbar";
 import Tesseract from 'tesseract.js';
@@ -451,11 +451,11 @@ const Dashboard = () => {
                   <div className="text-center py-8">
                     <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600">No compressed images yet</p>
-                    <Link to="/image-compressor">
+                    <RouterLink to="/image-compressor">
                       <Button className="mt-4 bg-blue-500 hover:bg-blue-600 text-white">
                         Compress Images
                       </Button>
-                    </Link>
+                    </RouterLink>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -502,11 +502,11 @@ const Dashboard = () => {
                   <div className="text-center py-8">
                     <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600">No compressed PDFs yet</p>
-                    <Link to="/pdf-compressor">
+                    <RouterLink to="/pdf-compressor">
                       <Button className="mt-4 bg-red-500 hover:bg-red-600 text-white">
                         Compress PDFs
                       </Button>
-                    </Link>
+                    </RouterLink>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -552,13 +552,13 @@ const Dashboard = () => {
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">Shortened URLs</h3>
                 {shortenedUrls.length === 0 ? (
                   <div className="text-center py-8">
-                    <LinkIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <Link className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600">No shortened URLs yet</p>
-                    <Link to="/url-shortener">
+                    <RouterLink to="/url-shortener">
                       <Button className="mt-4 bg-green-500 hover:bg-green-600 text-white">
                         Shorten URLs
                       </Button>
-                    </Link>
+                    </RouterLink>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -730,11 +730,11 @@ const Dashboard = () => {
                 </div>
 
                 {currentPlan === 'silver' && (
-                  <Link to="/upgrade">
+                  <RouterLink to="/upgrade">
                     <Button className="w-full bg-gradient-to-r from-blue-500 to-green-500 hover:from-blue-600 hover:to-green-600 text-white">
                       Upgrade Plan
                     </Button>
-                  </Link>
+                  </RouterLink>
                 )}
               </Card>
             </TabsContent>
